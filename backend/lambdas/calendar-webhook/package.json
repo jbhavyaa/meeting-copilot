@@ -1,0 +1,14 @@
+{
+  "name": "meeting-copilot-calendar-webhook",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.620.0",
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.143",
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}

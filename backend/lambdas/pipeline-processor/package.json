@@ -1,0 +1,19 @@
+{
+  "name": "meeting-copilot-pipeline-processor",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.26.0",
+    "@aws-sdk/client-s3": "^3.620.0",
+    "@aws-sdk/client-secrets-manager": "^3.620.0",
+    "@aws-sdk/s3-request-presigner": "^3.620.0",
+    "@supabase/supabase-js": "^2.45.4",
+    "assemblyai": "^4.0.0",
+    "resend": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.143",
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}
