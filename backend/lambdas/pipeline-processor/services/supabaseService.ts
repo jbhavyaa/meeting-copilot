@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import {
   MeetingStatus,
   WhisperTranscript,
@@ -7,20 +8,20 @@ import {
   Profile,
 } from '../../../shared/types';
 import { logger } from '../../../shared/logger';
+import { getSecret, AppSecrets } from '../../../shared/secrets';
+
+const SECRETS_NAME = process.env.APP_SECRETS_NAME ?? 'meeting-copilot/secrets';
 
 let _client: SupabaseClient | null = null;
 
-function getClient(): SupabaseClient {
+async function getClient(): Promise<SupabaseClient> {
   if (!_client) {
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!url || !key) {
-      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set');
-    }
-
-    // Service role key bypasses RLS — only used server-side in Lambda
-    _client = createClient(url, key, { auth: { persistSession: false } });
+    const secrets = await getSecret<AppSecrets>(SECRETS_NAME);
+    _client = createClient(secrets.SUPABASE_URL, secrets.SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      realtime: { transport: ws as any },
+    });
   }
   return _client;
 }
@@ -36,7 +37,7 @@ export async function updateMeetingStatus(
     if (status === 'recording') update.started_at = new Date().toISOString();
     if (status === 'complete' || status === 'failed') update.ended_at = new Date().toISOString();
 
-    const { error: dbError } = await getClient()
+    const { error: dbError } = await (await getClient())
       .from('meetings')
       .update(update)
       .eq('id', meetingId);
@@ -55,7 +56,8 @@ export async function saveTranscript(
   transcript: WhisperTranscript
 ): Promise<void> {
   try {
-    const { error } = await getClient().from('transcripts').insert({
+    const client = await getClient();
+    const { error } = await client.from('transcripts').insert({
       meeting_id: meetingId,
       full_text: transcript.full_text,
       speakers: transcript.speakers,
@@ -64,8 +66,7 @@ export async function saveTranscript(
 
     if (error) throw new Error(error.message);
 
-    // Persist duration on the parent meeting row at the same time
-    await getClient()
+    await client
       .from('meetings')
       .update({ duration_seconds: transcript.duration_seconds })
       .eq('id', meetingId);
@@ -83,7 +84,7 @@ export async function saveMeetingResults(
   result: ClaudeProcessingResult
 ): Promise<ActionItem[]> {
   try {
-    const supabase = getClient();
+    const supabase = await getClient();
 
     const { error: summaryError } = await supabase.from('meeting_summaries').insert({
       meeting_id: meetingId,
@@ -126,7 +127,7 @@ export async function saveMeetingResults(
 
 export async function getMeetingById(meetingId: string): Promise<{ meeting: { id: string; user_id: string; recall_bot_id: string | null; platform: string | null; title: string | null; started_at: string | null; created_at: string } }> {
   try {
-    const { data, error } = await getClient()
+    const { data, error } = await (await getClient())
       .from('meetings')
       .select('id, user_id, recall_bot_id, platform, title, started_at, created_at')
       .eq('id', meetingId)
@@ -145,7 +146,7 @@ export async function getMeetingById(meetingId: string): Promise<{ meeting: { id
 
 export async function getProfileByUserId(userId: string): Promise<Profile> {
   try {
-    const { data, error } = await getClient()
+    const { data, error } = await (await getClient())
       .from('profiles')
       .select('*')
       .eq('id', userId)
@@ -166,7 +167,7 @@ export async function getMeetingByBotId(
   botId: string
 ): Promise<{ id: string; user_id: string } | null> {
   try {
-    const { data, error } = await getClient()
+    const { data, error } = await (await getClient())
       .from('meetings')
       .select('id, user_id')
       .eq('recall_bot_id', botId)
@@ -187,7 +188,7 @@ export async function updateActionItemTicket(
   ticketUrl: string
 ): Promise<void> {
   try {
-    const { error } = await getClient()
+    const { error } = await (await getClient())
       .from('action_items')
       .update({
         jira_ticket_id: ticketId,
@@ -206,7 +207,7 @@ export async function updateActionItemTicket(
 
 export async function markActionItemFailed(actionItemId: string): Promise<void> {
   try {
-    const { error } = await getClient()
+    const { error } = await (await getClient())
       .from('action_items')
       .update({ status: 'failed' })
       .eq('id', actionItemId);
@@ -227,7 +228,7 @@ export async function createScheduledMeeting(
   scheduledStart: string
 ): Promise<void> {
   try {
-    const { error } = await getClient().from('meetings').insert({
+    const { error } = await (await getClient()).from('meetings').insert({
       user_id: userId,
       recall_bot_id: recallBotId,
       platform,

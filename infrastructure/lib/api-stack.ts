@@ -36,15 +36,19 @@ export class ApiStack extends cdk.Stack {
       NODE_OPTIONS: '--enable-source-maps',
     };
 
+    // monorepo root — Lambda source lives outside the infrastructure/ folder
+    const repoRoot = path.join(__dirname, '../..');
+
     // ── Webhook receiver ────────────────────────────────────────────────────────
     const webhookReceiverFn = new lambdaNodejs.NodejsFunction(this, 'WebhookReceiver', {
       functionName: 'meeting-copilot-webhook-receiver',
-      entry: path.join(__dirname, '../../backend/lambdas/webhook-receiver/handler.ts'),
+      entry: path.join(repoRoot, 'backend/lambdas/webhook-receiver/handler.ts'),
+      projectRoot: repoRoot,
       handler: 'handler',
       runtime: LAMBDA_RUNTIME,
       timeout: cdk.Duration.seconds(10),
       environment: commonEnv,
-      bundling: { sourceMap: true },
+      bundling: { sourceMap: true, forceDockerBundling: false },
     });
 
     appSecret.grantRead(webhookReceiverFn);
@@ -54,7 +58,8 @@ export class ApiStack extends cdk.Stack {
     // ── Pipeline processor ──────────────────────────────────────────────────────
     const pipelineProcessorFn = new lambdaNodejs.NodejsFunction(this, 'PipelineProcessor', {
       functionName: 'meeting-copilot-pipeline-processor',
-      entry: path.join(__dirname, '../../backend/lambdas/pipeline-processor/handler.ts'),
+      entry: path.join(repoRoot, 'backend/lambdas/pipeline-processor/handler.ts'),
+      projectRoot: repoRoot,
       handler: 'handler',
       runtime: LAMBDA_RUNTIME,
       // 14 minutes — SQS visibility timeout must be >= Lambda timeout
@@ -65,7 +70,7 @@ export class ApiStack extends cdk.Stack {
         SUPABASE_URL: process.env.SUPABASE_URL ?? '',
         SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
       },
-      bundling: { sourceMap: true },
+      bundling: { sourceMap: true, forceDockerBundling: false },
     });
 
     appSecret.grantRead(pipelineProcessorFn);
@@ -77,12 +82,16 @@ export class ApiStack extends cdk.Stack {
     // ── Calendar webhook ────────────────────────────────────────────────────────
     const calendarWebhookFn = new lambdaNodejs.NodejsFunction(this, 'CalendarWebhook', {
       functionName: 'meeting-copilot-calendar-webhook',
-      entry: path.join(__dirname, '../../backend/lambdas/calendar-webhook/handler.ts'),
+      entry: path.join(repoRoot, 'backend/lambdas/calendar-webhook/handler.ts'),
+      projectRoot: repoRoot,
       handler: 'handler',
       runtime: LAMBDA_RUNTIME,
       timeout: cdk.Duration.seconds(15),
-      environment: commonEnv,
-      bundling: { sourceMap: true },
+      environment: {
+        ...commonEnv,
+        CALENDAR_AUTO_SCHEDULE_ENABLED: 'false', // flip to 'true' after Google verification
+      },
+      bundling: { sourceMap: true, forceDockerBundling: false },
     });
 
     appSecret.grantRead(calendarWebhookFn);

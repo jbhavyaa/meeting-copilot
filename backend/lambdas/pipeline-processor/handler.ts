@@ -6,7 +6,7 @@ import { logger } from '../../shared/logger';
 import { getRecordingUrl, downloadAudio } from './services/recallService';
 import { uploadAudio, getAudioUrl } from './services/s3Service';
 import { transcribeAudio } from './services/assemblyaiService';
-import { processMeeting } from './services/claudeService';
+import { processMeeting } from './services/geminiService';
 import { createTicketsBatch } from './services/jiraService';
 import { sendFollowUpEmail } from './services/emailService';
 import {
@@ -54,7 +54,7 @@ async function processRecord(record: SQSRecord): Promise<void> {
     ? new Date(meeting.started_at).toISOString().split('T')[0]
     : new Date().toISOString().split('T')[0];
 
-  const claudeResult = await processMeeting(transcript, meetingDate, secrets.ANTHROPIC_API_KEY);
+  const claudeResult = await processMeeting(transcript, meetingDate);
   const savedActionItems = await saveMeetingResults(meetingId, claudeResult);
 
   // Mark complete so the frontend updates immediately — Jira/email follow asynchronously

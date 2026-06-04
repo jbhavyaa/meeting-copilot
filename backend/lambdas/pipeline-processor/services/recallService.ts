@@ -3,7 +3,7 @@ import { logger } from '../../../shared/logger';
 
 const RECALL_API_BASE = 'https://us-west-2.recall.ai/api/v1';
 
-function buildHeaders(apiKey: string): HeadersInit {
+function buildHeaders(apiKey: string): Record<string, string> {
   return {
     Authorization: `Token ${apiKey}`,
     'Content-Type': 'application/json',
@@ -31,12 +31,16 @@ export async function getRecordingUrl(botId: string, apiKey: string): Promise<st
   try {
     const botStatus = await getBotStatus(botId, apiKey);
 
-    if (!botStatus.video_url) {
-      throw new Error(`No recording URL available for bot "${botId}" — status: ${botStatus.status.code}`);
+    // Recall API returns recordings array — video is at recordings[0].media_shortcuts.video_mixed.download_url
+    const recordings = (botStatus as unknown as { recordings: Array<{ media_shortcuts?: { video_mixed?: { data?: { download_url?: string } } } }> }).recordings;
+    const downloadUrl = recordings?.[0]?.media_shortcuts?.video_mixed?.data?.download_url;
+
+    if (!downloadUrl) {
+      throw new Error(`No recording URL available for bot "${botId}"`);
     }
 
     logger.info('Retrieved recording URL', { botId });
-    return botStatus.video_url;
+    return downloadUrl;
   } catch (error) {
     throw new Error(
       `getRecordingUrl failed for bot "${botId}": ${error instanceof Error ? error.message : String(error)}`

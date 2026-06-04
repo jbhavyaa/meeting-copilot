@@ -25,6 +25,7 @@ export interface Profile {
   jira_api_token: string | null;
   google_calendar_token: GoogleCalendarToken | null;
   follow_up_recipients: string[] | null;
+  auto_join_meetings: boolean;
   created_at: string;
 }
 
@@ -187,10 +188,14 @@ export interface GoogleCalendarEvent {
 export interface RecallWebhookEvent {
   event: string;
   data: {
-    bot_id: string;
-    status: {
+    bot: {
+      id: string;
+      metadata: Record<string, unknown>;
+    };
+    data: {
       code: string;
-      message: string | null;
+      sub_code: string | null;
+      updated_at: string;
     };
   };
 }

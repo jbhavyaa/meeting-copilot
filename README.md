@@ -79,10 +79,11 @@ An AI-powered personal assistant that auto-joins your Zoom and Google Meet calls
 1. Sign up at [assemblyai.com](https://www.assemblyai.com)
 2. Dashboard → API Keys → copy your key → `ASSEMBLYAI_API_KEY`
 
-### 6. Anthropic (Claude)
+### 6. Google Gemini API (free — 1500 requests/day)
 
-1. Go to [console.anthropic.com](https://console.anthropic.com) → **API Keys**
-2. Create a key → `ANTHROPIC_API_KEY`
+1. Go to [aistudio.google.com](https://aistudio.google.com)
+2. Click **Get API Key** → **Create API Key** → select your Google Cloud project
+3. Add to AWS Secrets Manager as `GEMINI_API_KEY`
 
 ### 7. Resend
 
@@ -103,7 +104,7 @@ aws secretsmanager create-secret \
   --secret-string '{
     "RECALL_API_KEY": "...",
     "RECALL_WEBHOOK_SECRET": "...",
-    "ANTHROPIC_API_KEY": "...",
+    "GEMINI_API_KEY": "...",
     "ASSEMBLYAI_API_KEY": "...",
     "SUPABASE_URL": "...",
     "SUPABASE_SERVICE_ROLE_KEY": "...",
@@ -142,6 +143,11 @@ npx vercel --prod
 Set the three environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) in your Vercel project settings.
 
 ### 12. Register Google Calendar webhook
+
+> ⚠️ **Calendar auto-scheduling is currently disabled** pending Google OAuth app verification.
+> Users can manually add a bot to any meeting using the URL input on the dashboard.
+> To re-enable: set `FEATURES.CALENDAR_AUTO_SCHEDULE = true` in `frontend/lib/config.ts`
+> and `CALENDAR_AUTO_SCHEDULE_ENABLED=true` in the Lambda environment variables.
 
 After deploying the frontend and signing in, make a one-time call to register your calendar for push notifications:
 

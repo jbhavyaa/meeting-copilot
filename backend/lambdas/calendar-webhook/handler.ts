@@ -2,7 +2,7 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { getSecret, AppSecrets } from '../../shared/secrets';
 import { logger } from '../../shared/logger';
 import { GoogleCalendarEvent, Platform } from '../../shared/types';
-import { createScheduledMeeting } from '../pipeline-processor/services/supabaseService';
+import { createScheduledMeeting, getProfileByUserId } from '../pipeline-processor/services/supabaseService';
 
 const config = {
   secretsManagerSecretName: process.env.APP_SECRETS_NAME ?? 'meeting-copilot/secrets',
@@ -64,6 +64,12 @@ async function scheduleRecallBot(
 }
 
 export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
+  // Calendar webhook is disabled until Google OAuth verification is complete
+  // To re-enable: set CALENDAR_AUTO_SCHEDULE_ENABLED=true in Lambda environment variables
+  if (process.env.CALENDAR_AUTO_SCHEDULE_ENABLED !== 'true') {
+    return { statusCode: 200, body: JSON.stringify({ message: 'Calendar auto-scheduling is currently disabled' }) };
+  }
+
   try {
     const secrets = await getSecret<AppSecrets>(config.secretsManagerSecretName);
 
@@ -99,6 +105,13 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     const userId = event.headers['x-user-id'];
     if (!userId) {
       logger.warn('Calendar webhook missing x-user-id header');
+      return ok();
+    }
+
+    // Respect the user's auto-join toggle — if off, log and skip
+    const profile = await getProfileByUserId(userId);
+    if (!profile.auto_join_meetings) {
+      logger.info('Auto-join disabled for user — skipping bot scheduling', { userId });
       return ok();
     }
 

@@ -55,7 +55,8 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
 
     const secrets = await getSecret<AppSecrets>(config.secretsManagerSecretName);
 
-    if (!verifyHmacSignature(rawBody, signatureHeader, secrets.RECALL_WEBHOOK_SECRET)) {
+    // Only verify signature if Recall sends one — some plans don't support webhook signing
+    if (signatureHeader && !verifyHmacSignature(rawBody, signatureHeader, secrets.RECALL_WEBHOOK_SECRET)) {
       logger.warn('Invalid Recall webhook signature');
       return forbidden();
     }
@@ -67,9 +68,9 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       return ok({ message: 'Event ignored' });
     }
 
-    const botId = payload.data?.bot_id;
+    const botId = payload.data?.bot?.id;
     if (!botId) {
-      return badRequest('Missing bot_id in webhook payload');
+      return badRequest('Missing bot id in webhook payload');
     }
 
     const meetingRow = await getMeetingByBotId(botId);

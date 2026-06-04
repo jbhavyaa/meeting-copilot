@@ -26,8 +26,10 @@ export class StorageStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    // DLQ must be FIFO to match the main queue
     this.processingDlq = new sqs.Queue(this, 'ProcessingDlq', {
-      queueName: 'meeting-processing-dlq',
+      queueName: 'meeting-processing-dlq.fifo',
+      fifo: true,
       retentionPeriod: cdk.Duration.days(14),
     });
 

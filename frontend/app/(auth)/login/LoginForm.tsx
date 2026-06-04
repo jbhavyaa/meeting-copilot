@@ -19,11 +19,12 @@ export function LoginForm() {
       setLoading(true);
       setError(null);
       const supabase = createClient();
+      // Calendar scopes removed — app is in public mode with basic login only
+      // To re-enable: set FEATURES.CALENDAR_AUTO_SCHEDULE to true and add scopes back
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${location.origin}/api/auth/callback`,
-          scopes: 'https://www.googleapis.com/auth/calendar.readonly',
         },
       });
       if (authError) throw authError;
@@ -87,7 +88,7 @@ export function LoginForm() {
           </button>
 
           <p className="text-center text-xs text-muted-foreground">
-            Requires Google Calendar read access to detect upcoming meetings.
+            Sign in with your Google account to get started.
           </p>
         </div>
       </div>

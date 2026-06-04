@@ -34,7 +34,8 @@ export async function getSecret<T = Record<string, string>>(secretName: string):
 
 export interface AppSecrets {
   RECALL_API_KEY: string;
-  ANTHROPIC_API_KEY: string;
+  GEMINI_API_KEY: string;
+  GROQ_API_KEY: string;
   ASSEMBLYAI_API_KEY: string;
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;

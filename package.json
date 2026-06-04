@@ -1,0 +1,24 @@
+{
+  "name": "meeting-copilot",
+  "version": "1.0.0",
+  "description": "An AI-powered personal assistant that auto-joins your Zoom and Google Meet calls, transcribes them, and produces summaries, action items, Jira tickets, and a follow-up email — all visible in a live dashboard.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jbhavyaa/meeting-copilot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jbhavyaa/meeting-copilot/issues"
+  },
+  "homepage": "https://github.com/jbhavyaa/meeting-copilot#readme",
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}
