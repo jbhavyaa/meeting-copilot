@@ -22,16 +22,24 @@ export async function sendFollowUpEmail(
       ? `Meeting notes: ${meeting.title}`
       : `Meeting notes — ${new Date(meeting.started_at ?? meeting.created_at).toLocaleDateString()}`;
 
-    await resend.emails.send({
-      from: 'Meeting Copilot <meetings@notifications.yourdomain.com>',
+    logger.info('sendFollowUpEmail: attempting to send', {
+      meetingId: meeting.id,
+      recipients,
+      subject,
+    });
+
+    const result = await resend.emails.send({
+      from: 'Meeting Copilot <onboarding@resend.dev>',
       to: recipients,
       subject,
       text: emailDraft,
     });
 
-    logger.info('Follow-up email sent', {
+    logger.info('sendFollowUpEmail: sent successfully', {
       meetingId: meeting.id,
       recipientCount: recipients.length,
+      resendId: result.data?.id,
+      error: result.error,
     });
   } catch (error) {
     throw new Error(
